@@ -35,7 +35,11 @@ Built with Go, ProjectManager provides an intuitive interface for managing proje
 * Configurable storage locations
 * Easy project searching and filtering
 
+# Technologies
 
+* Language: Go
+* Database: SQLite
+* GUI Framework: Fyne
 
 
 # Prerequisites
