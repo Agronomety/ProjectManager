@@ -2,6 +2,8 @@ package storage
 
 import (
 	"database/sql"
+	"fmt"
+	"strings"
 
 	"github.com/Agronomety/ProjectManager/internal/models"
 )
@@ -14,10 +16,170 @@ type ProjectRepository interface {
 	ListAll() ([]models.Project, error)
 }
 
+func (r *SQLiteProjectRepository) Create(project *models.Project) error {
+
+	query := `
+ 		INSERT INTO projects
+		(name, path, description, readme_path, last_opened, tags, icon)
+		VALUES (?, ?, ?, ?, ?, ?, ?)
+	`
+
+	tagsStr := strings.Join(project.Tags, ",")
+
+	result, err := r.db.Exec(
+		query,
+		project.Name,
+		project.Path,
+		project.Description,
+		project.ReadmePath,
+		project.LastOpened,
+		tagsStr,
+		project.Icon,
+	)
+
+	if err != nil {
+		return fmt.Errorf("failed to insert project: %v", err)
+	}
+
+	id, err := result.LastInsertId()
+	if err != nil {
+		return fmt.Errorf("failed to get last insert ID: %v", err)
+	}
+
+	project.ID = id
+
+	return nil
+}
+
+func (r *SQLiteProjectRepository) Update(project *models.Project) error {
+	query := `
+		UPDATE projects
+		SET name = ?, description = ?, readme_path = ?, last_opened = ?, tags = ?, icon = ?
+		WHERE id = ?
+	`
+
+	tagsStr := strings.Join(project.Tags, ",")
+
+	_, err := r.db.Exec(
+		query,
+		project.Name,
+		project.Description,
+		project.ReadmePath,
+		project.LastOpened,
+		tagsStr,
+		project.Icon,
+		project.ID,
+	)
+
+	if err != nil {
+		return fmt.Errorf("failed to update project: %v", err)
+	}
+
+	return nil
+}
+
+func (r *SQLiteProjectRepository) Delete(id int64) error {
+	query := `
+		DELETE FROM projects
+		WHERE id = ?
+	`
+
+	_, err := r.db.Exec(query, id)
+	if err != nil {
+		return fmt.Errorf("failed to delete project: %v", err)
+	}
+
+	return nil
+}
+
+func (r *SQLiteProjectRepository) GetByID(id int64) (*models.Project, error) {
+	query := `
+		SELECT id, name, path, description, readme_path, last_opened, tags, icon
+		FROM projects
+		WHERE id = ?
+	`
+
+	var project models.Project
+	var tagsStr string
+
+	err := r.db.QueryRow(query, id).Scan(
+		&project.ID,
+		&project.Name,
+		&project.Path,
+		&project.Description,
+		&project.ReadmePath,
+		&project.LastOpened,
+		&tagsStr,
+		&project.Icon,
+	)
+
+	if err != nil {
+		return nil, fmt.Errorf("failed to get project: %v", err)
+	}
+
+	project.Tags = strings.Split(tagsStr, ",")
+
+	return &project, nil
+}
+
+func (r *SQLiteProjectRepository) ListAll() ([]models.Project, error) {
+	// Write an SQL SELECT query to get all projects
+	query := `
+        SELECT id, name, path, description, readme_path, 
+               last_opened, tags, icon 
+        FROM projects
+    `
+
+	// Execute the query
+	rows, err := r.db.Query(query)
+	if err != nil {
+		return nil, fmt.Errorf("failed to query projects: %v", err)
+	}
+	defer rows.Close()
+
+	// Slice to hold all projects
+	var projects []models.Project
+
+	// Iterate through results
+	for rows.Next() {
+		var project models.Project
+		var tagsStr string
+
+		// Scan each row into a project
+		err := rows.Scan(
+			&project.ID,
+			&project.Name,
+			&project.Path,
+			&project.Description,
+			&project.ReadmePath,
+			&project.LastOpened,
+			&tagsStr,
+			&project.Icon,
+		)
+		if err != nil {
+			return nil, fmt.Errorf("failed to scan project: %v", err)
+		}
+
+		// Convert tags string back to slice
+		if tagsStr != "" {
+			project.Tags = strings.Split(tagsStr, ",")
+		}
+
+		projects = append(projects, project)
+	}
+
+	// Check for any errors encountered during iteration
+	if err = rows.Err(); err != nil {
+		return nil, fmt.Errorf("error reading projects: %v", err)
+	}
+
+	return projects, nil
+}
+
 type SQLiteProjectRepository struct {
 	db *sql.DB
 }
 
-func NewProjectRepository(db *sql.DB) ProjectRepository {
-	return &SQLiteProjectRepository{db: db}
+func NewProjectRepository(storage *SQLiteStorage) ProjectRepository {
+	return &SQLiteProjectRepository{db: storage.db}
 }

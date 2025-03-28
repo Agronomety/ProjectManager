@@ -28,6 +28,6 @@ func main() {
 	projectService := service.NewProjectService(projectRepo)
 
 	// Launch GUI
-	app := ui.NewApplication(projectService)
+	app := ui.NewProjectManagerUI(projectService)
 	app.Run()
 }

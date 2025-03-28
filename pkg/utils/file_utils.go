@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"io/ioutil"
+	"log"
 	"os"
 	"path/filepath"
 	"strings"
@@ -89,22 +90,37 @@ func ValidateProjectPath(path string) error {
 		return fmt.Errorf("path is not a directory: %s", path)
 	}
 
-	// Optional: Check for minimal project structure
-	requiredItems := []string{
-		".git",
-		"go.mod",
-		"src",
-		"pkg",
+	// Less strict validation
+	// Allow the path if it has at least one file or subdirectory
+	entries, err := ioutil.ReadDir(path)
+	if err != nil {
+		return fmt.Errorf("cannot read directory contents: %s", path)
 	}
 
-	for _, item := range requiredItems {
-		itemPath := filepath.Join(path, item)
-		if _, err := os.Stat(itemPath); err == nil {
-			return nil // At least one required item exists
+	if len(entries) == 0 {
+		return fmt.Errorf("directory is empty: %s", path)
+	}
+
+	// Optional: Soft check for project indicators
+	softIndicators := []string{
+		".git",
+		"go.mod",
+		"package.json",
+		"src",
+		"pkg",
+		"README.md",
+		"readme.md",
+	}
+
+	for _, indicator := range softIndicators {
+		if _, err := os.Stat(filepath.Join(path, indicator)); err == nil {
+			return nil
 		}
 	}
 
-	return fmt.Errorf("path does not appear to be a valid project directory: %s", path)
+	// Warning: Directory seems empty or not a typical project
+	log.Printf("Warning: Directory %s might not be a typical project", path)
+	return nil
 }
 
 // GetProjectName attempts to extract a meaningful project name from the path
