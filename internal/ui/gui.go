@@ -113,6 +113,43 @@ func (ui *ProjectManagerUI) createUI() {
 		}
 	})
 
+	// Remove Project button
+	removeProjectBtn := widget.NewButton("Remove Project", func() {
+		if ui.selectedProjectIndex < 0 || ui.selectedProjectIndex >= len(ui.currentProjects) {
+			dialog.ShowError(fmt.Errorf("no project selected"), ui.window)
+			return
+		}
+
+		project := ui.currentProjects[ui.selectedProjectIndex]
+
+		// Add confirmation dialog
+		confirmDialog := dialog.NewConfirm(
+			"Confirm Removal",
+			fmt.Sprintf("Are you sure you want to remove project '%s'? This action cannot be undone.", project.Name),
+			func(confirmed bool) {
+				if !confirmed {
+					return // User canceled the operation
+				}
+
+				// User confirmed, proceed with deletion
+				err := ui.projectService.DeleteProject(project.ID)
+				if err != nil {
+					dialog.ShowError(fmt.Errorf("failed to remove project: %v", err), ui.window)
+					return
+				}
+
+				ui.currentProjects = append(ui.currentProjects[:ui.selectedProjectIndex], ui.currentProjects[ui.selectedProjectIndex+1:]...)
+				ui.projectList.Refresh()
+				ui.selectedProjectIndex = -1              // Reset selection
+				ui.updateProjectDetails(models.Project{}) // Clear details
+			},
+			ui.window,
+		)
+
+		// Show the confirmation dialog
+		confirmDialog.Show()
+	})
+
 	// Project Details Form
 	ui.projectDetails = &widget.Form{
 		Items: []*widget.FormItem{
@@ -120,6 +157,7 @@ func (ui *ProjectManagerUI) createUI() {
 			{Text: "Description", Widget: ui.descriptionEdit},
 			{Text: "README", Widget: readmeUploadBtn},
 			{Text: "Open in VSCode", Widget: openInVSCodeBtn},
+			{Text: "Remove Project", Widget: removeProjectBtn},
 			{Text: "README Viewer", Widget: ui.readmeViewer},
 		},
 	}
