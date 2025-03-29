@@ -20,7 +20,7 @@ type Config struct {
 
 // DefaultConfig provides initial configuration values
 func DefaultConfig() *Config {
-	appName := "CodeHive"
+	appName := "ProjectManager"
 	configPath := configdir.LocalConfig(appName)
 
 	return &Config{
@@ -35,7 +35,7 @@ func DefaultConfig() *Config {
 
 // Load reads the configuration file or creates a default one
 func Load() (*Config, error) {
-	appName := "CodeHive"
+	appName := "ProjectManager"
 	configPath := configdir.LocalConfig(appName)
 	configFile := filepath.Join(configPath, "config.json")
 
@@ -69,7 +69,7 @@ func Load() (*Config, error) {
 
 // Save writes the configuration to a file
 func (c *Config) Save() error {
-	appName := "CodeHive"
+	appName := "ProjectManager"
 	configPath := configdir.LocalConfig(appName)
 	configFile := filepath.Join(configPath, "config.json")
 
