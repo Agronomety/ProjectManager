@@ -2,6 +2,7 @@ package ui
 
 import (
 	"fmt"
+	"image/color"
 	"io/ioutil"
 	"log"
 	"path/filepath"
@@ -9,6 +10,7 @@ import (
 
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/app"
+	"fyne.io/fyne/v2/canvas"
 	"fyne.io/fyne/v2/container"
 	"fyne.io/fyne/v2/dialog"
 	"fyne.io/fyne/v2/widget"
@@ -34,7 +36,7 @@ type ProjectManagerUI struct {
 
 func NewProjectManagerUI(projectService service.ProjectService) *ProjectManagerUI {
 	a := app.New()
-	w := a.NewWindow("CodeHive - Project Manager")
+	w := a.NewWindow("Project Manager")
 	w.Resize(fyne.NewSize(1200, 800))
 
 	ui := &ProjectManagerUI{
@@ -49,6 +51,23 @@ func NewProjectManagerUI(projectService service.ProjectService) *ProjectManagerU
 }
 
 func (ui *ProjectManagerUI) createUI() {
+	// Create a banner with Go-themed styling
+	bannerLabel := widget.NewLabel("ProjectManager")
+	bannerLabel.TextStyle = fyne.TextStyle{
+		Bold: true,
+	}
+
+	// Create a blue rectangle for the banner background
+	// Using Go's light blue color (#00ADD8)
+	bannerBg := canvas.NewRectangle(color.NRGBA{R: 0, G: 173, B: 216, A: 255})
+	bannerBg.SetMinSize(fyne.NewSize(200, 40))
+
+	// Overlay the label on the banner background
+	bannerContainer := container.NewStack(
+		bannerBg,
+		container.NewCenter(bannerLabel),
+	)
+
 	// Initialize project list
 	ui.projectList = widget.NewList(
 		func() int { return len(ui.currentProjects) },
@@ -73,13 +92,13 @@ func (ui *ProjectManagerUI) createUI() {
 		importProjectBtn,
 	)
 
-	// Project List Container - No change here, the List widget already scrolls
+	// Project List Container with banner on top
 	projectListContainer := container.NewBorder(
-		buttonContainer, // Top
-		nil,             // Bottom
-		nil,             // Left
-		nil,             // Right
-		ui.projectList,  // Center
+		container.NewVBox(bannerContainer, buttonContainer), // Top - banner and buttons
+		nil,            // Bottom
+		nil,            // Left
+		nil,            // Right
+		ui.projectList, // Center
 	)
 
 	// Initialize description edit
@@ -160,10 +179,10 @@ func (ui *ProjectManagerUI) createUI() {
 		Items: []*widget.FormItem{
 			{Text: "Project Name", Widget: widget.NewLabel("")},
 			{Text: "Description", Widget: ui.descriptionEdit},
-			{Widget: readmeUploadBtn},
-			{Widget: openInVSCodeBtn},
-			{Widget: removeProjectBtn},
-			{Widget: readmeScrollContainer}, // Use the scroll container here
+			{Text: "README", Widget: readmeUploadBtn},
+			{Text: "Open in VSCode", Widget: openInVSCodeBtn},
+			{Text: "Remove Project", Widget: removeProjectBtn},
+			{Text: "README Viewer", Widget: readmeScrollContainer}, // Use the scroll container here
 		},
 	}
 
