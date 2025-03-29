@@ -68,3 +68,20 @@ And to run the application
 cd cmd
 go run main.go
 ```
+
+# Bugs and Errors
+If you this recieve this error while trying to run the main.go file:
+
+```bash
+imports github.com/go-gl/gl/v2.1/gl: build constraints exclude all Go files in...
+```
+
+That means that you don't have a C compiler installed and/or recongised. 
+I recommend following the steps in https://www.msys2.org/ to download a C compiler.
+And after following all the steps there, as an extra last step I would recommend that
+you double check that the PATH in system variables has been updated to include the 
+terminal for MSYS2.To do so press Window + R. Then type in sysdm.cpl and press Enter. 
+In Advanced click Enviromnent Variables. Under the System Variables click on PATH and 
+then Edit. If you can't see a C:\msys64\ucrt64\bin then click on New and then insert
+the line into an empty space and click Ok and then close it down. After that restart
+your terminal and now you can run the application.
