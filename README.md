@@ -47,6 +47,7 @@ Built with Go, ProjectManager provides an intuitive interface for managing proje
 * Go 1.20+
 * Git
 * Visual Studio Code (recommended)
+* C Compiler (https://www.msys2.org/)
 
 # Installation
 
