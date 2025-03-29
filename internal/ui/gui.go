@@ -73,7 +73,7 @@ func (ui *ProjectManagerUI) createUI() {
 		importProjectBtn,
 	)
 
-	// Project List Container
+	// Project List Container - No change here, the List widget already scrolls
 	projectListContainer := container.NewBorder(
 		buttonContainer, // Top
 		nil,             // Bottom
@@ -89,6 +89,11 @@ func (ui *ProjectManagerUI) createUI() {
 	// Initialize README viewer
 	ui.readmeViewer = widget.NewLabel("No README loaded")
 	ui.readmeViewer.Wrapping = fyne.TextWrapWord
+
+	// Create a scrollable container for README content
+	readmeScrollContainer := container.NewScroll(ui.readmeViewer)
+	// Set a minimum size for the scroll container so it displays properly
+	readmeScrollContainer.SetMinSize(fyne.NewSize(400, 300))
 
 	// README upload button
 	readmeUploadBtn := widget.NewButton("Upload README", ui.uploadReadmeFile)
@@ -113,7 +118,7 @@ func (ui *ProjectManagerUI) createUI() {
 		}
 	})
 
-	// Remove Project button
+	// Remove Project button with confirmation dialog
 	removeProjectBtn := widget.NewButton("Remove Project", func() {
 		if ui.selectedProjectIndex < 0 || ui.selectedProjectIndex >= len(ui.currentProjects) {
 			dialog.ShowError(fmt.Errorf("no project selected"), ui.window)
@@ -150,7 +155,7 @@ func (ui *ProjectManagerUI) createUI() {
 		confirmDialog.Show()
 	})
 
-	// Project Details Form
+	// Project Details Form - Update the README item to use the scroll container
 	ui.projectDetails = &widget.Form{
 		Items: []*widget.FormItem{
 			{Text: "Project Name", Widget: widget.NewLabel("")},
@@ -158,9 +163,12 @@ func (ui *ProjectManagerUI) createUI() {
 			{Text: "README", Widget: readmeUploadBtn},
 			{Text: "Open in VSCode", Widget: openInVSCodeBtn},
 			{Text: "Remove Project", Widget: removeProjectBtn},
-			{Text: "README Viewer", Widget: ui.readmeViewer},
+			{Text: "README Viewer", Widget: readmeScrollContainer}, // Use the scroll container here
 		},
 	}
+
+	// Make the form scrollable too, for projects with lots of metadata or description
+	formScroll := container.NewScroll(ui.projectDetails)
 
 	// Project List Selection Handler
 	ui.projectList.OnSelected = func(id widget.ListItemID) {
@@ -174,7 +182,7 @@ func (ui *ProjectManagerUI) createUI() {
 	// Main Layout
 	split := container.NewHSplit(
 		projectListContainer,
-		ui.projectDetails,
+		formScroll, // Use the scrollable form instead of direct form
 	)
 	split.Offset = 0.3 // 30% list, 70% details
 
