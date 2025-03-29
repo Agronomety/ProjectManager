@@ -160,10 +160,10 @@ func (ui *ProjectManagerUI) createUI() {
 		Items: []*widget.FormItem{
 			{Text: "Project Name", Widget: widget.NewLabel("")},
 			{Text: "Description", Widget: ui.descriptionEdit},
-			{Text: "README", Widget: readmeUploadBtn},
-			{Text: "Open in VSCode", Widget: openInVSCodeBtn},
-			{Text: "Remove Project", Widget: removeProjectBtn},
-			{Text: "README Viewer", Widget: readmeScrollContainer}, // Use the scroll container here
+			{Widget: readmeUploadBtn},
+			{Widget: openInVSCodeBtn},
+			{Widget: removeProjectBtn},
+			{Widget: readmeScrollContainer}, // Use the scroll container here
 		},
 	}
 
