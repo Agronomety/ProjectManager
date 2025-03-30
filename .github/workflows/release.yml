@@ -1,0 +1,71 @@
+name: Build and Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+    branches:
+      - main 
+
+jobs:
+  build:
+    name: Build for ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [windows-latest, macos-latest, ubuntu-latest]
+        include:
+          - os: windows-latest
+            output_name: ProjectManager.exe
+            asset_name: ProjectManager-windows.exe
+          - os: macos-latest
+            output_name: ProjectManager
+            asset_name: ProjectManager-macos
+          - os: ubuntu-latest
+            output_name: ProjectManager
+            asset_name: ProjectManager-linux
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Set up Go
+        uses: actions/setup-go@v4
+        with:
+          go-version: '1.21' 
+
+      - name: Install dependencies (Ubuntu)
+        if: matrix.os == 'ubuntu-latest'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y gcc libgl1-mesa-dev xorg-dev
+
+      - name: Build application
+        run: go build -v -o ${{ matrix.output_name }} ./cmd/
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: ${{ matrix.asset_name }}
+          path: ${{ matrix.output_name }}
+          
+  release:
+    needs: build
+    runs-on: ubuntu-latest
+    
+    if: startsWith(github.ref, 'refs/tags/')
+    steps:
+      - name: Download all artifacts
+        uses: actions/download-artifact@v3
+        
+      - name: Create Release
+        id: create_release
+        uses: softprops/action-gh-release@v1
+        with:
+          files: |
+            ProjectManager-windows.exe/ProjectManager.exe
+            ProjectManager-macos/ProjectManager
+            ProjectManager-linux/ProjectManager
+          draft: false
+          prerelease: false
+          generate_release_notes: true
