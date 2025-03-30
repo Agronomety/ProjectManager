@@ -29,6 +29,7 @@ type ProjectManagerUI struct {
 	projectDetails       *widget.Form
 	descriptionEdit      *widget.Entry
 	readmeViewer         *widget.Label
+	searchEntry          *widget.Entry
 	currentProjects      []models.Project
 	vsCodeLauncher       *vscode.Launcher
 	selectedProjectIndex int
@@ -92,9 +93,22 @@ func (ui *ProjectManagerUI) createUI() {
 		importProjectBtn,
 	)
 
+	//Search bar
+	ui.searchEntry = widget.NewEntry()
+	ui.searchEntry.SetPlaceHolder("Search projects...")
+	searchIcon := widget.NewButton("🔍", func() {
+		ui.performSearch(ui.searchEntry.Text)
+	})
+	searchBar := container.NewBorder(nil, nil, nil, searchIcon, ui.searchEntry)
+
+	// Update entry when Enter is pressed
+	ui.searchEntry.OnSubmitted = func(query string) {
+		ui.performSearch(query)
+	}
+
 	// Project List Container with banner on top
 	projectListContainer := container.NewBorder(
-		container.NewVBox(bannerContainer, buttonContainer), // Top - banner and buttons
+		container.NewVBox(bannerContainer, buttonContainer, searchBar), // Top - banner and buttons
 		nil,            // Bottom
 		nil,            // Left
 		nil,            // Right
@@ -496,6 +510,38 @@ func (ui *ProjectManagerUI) loadProjects() {
 	if len(projects) > 0 {
 		ui.projectList.Select(0)
 	}
+}
+
+func (ui *ProjectManagerUI) performSearch(query string) {
+	if query == "" {
+		// If search is empty, load all projects
+		ui.loadProjects()
+		return
+	}
+
+	// Search projects using the service
+	projects, err := ui.projectService.SearchProjects(query)
+	if err != nil {
+		dialog.ShowError(fmt.Errorf("search failed: %v", err), ui.window)
+		return
+	}
+
+	// Update the current projects list with search results
+	ui.currentProjects = projects
+
+	// Refresh the list
+	ui.projectList.Refresh()
+
+	// Clear selection and details
+	ui.selectedProjectIndex = -1
+	ui.updateProjectDetails(models.Project{})
+
+	// Show result count
+	dialog.ShowInformation(
+		"Search Results",
+		fmt.Sprintf("Found %d projects matching '%s'", len(projects), query),
+		ui.window,
+	)
 }
 
 func (ui *ProjectManagerUI) Run() {
