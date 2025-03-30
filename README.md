@@ -78,6 +78,7 @@ imports github.com/go-gl/gl/v2.1/gl: build constraints exclude all Go files in..
 
 That means that you don't have a C compiler installed and/or recongised. 
 I recommend following the steps in https://www.msys2.org/ to download a C compiler.
+
 And after following all the steps there, as an extra last step I would recommend that
 you double check that the PATH in system variables has been updated to include the 
 terminal for MSYS2.To do so press Window + R. Then type in sysdm.cpl and press Enter. 
