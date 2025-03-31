@@ -44,12 +44,38 @@ Built with Go, ProjectManager provides an intuitive interface for managing proje
 
 # Prerequisites
 
+* Visual Studio Code (recommended)
+
+
+## If planning to Clone the Repository:
+
 * Go 1.20+
 * Git
-* Visual Studio Code (recommended)
 * C Compiler (https://www.msys2.org/)
 
+
+
 # Installation
+
+## Option 1: Download Pre-built Executables
+
+Pre-built executables are available for Windows, macOS, and Linux in the [releases section](https://github.com/Agronomety/ProjectManager/releases) of the repository.
+
+1. Navigate to the [releases page](https://github.com/Agronomety/ProjectManager/releases)
+   
+2. Download the appropriate application for your operating system:
+   - Windows: `projectmanager-windows.exe`
+   - macOS: `projectmanager-macos`
+   - Linux: `projectmanager-linux`
+     
+3. For macOS and Linux users, you may need to make the file executable:
+   ```bash
+   chmod +x projectmanager-macos  # or projectmanager-linux
+   
+4. If Windows displays a security warning when launching the application, click 'Run anyway' to proceed.
+
+
+## Option 2: Download the Repository
 
 Clone the Repository
 
@@ -81,7 +107,9 @@ I recommend following the steps in https://www.msys2.org/ to download a C compil
 
 And after following all the steps there, as an extra last step I would recommend that
 you double check that the PATH in system variables has been updated to include the 
-terminal for MSYS2.To do so press Window + R. Then type in sysdm.cpl and press Enter. 
+terminal for MSYS2.
+
+To do so press Window + R. Then type in sysdm.cpl and press Enter. 
 In Advanced click Enviromnent Variables. Under the System Variables click on PATH and 
 then Edit. If you can't see a C:\msys64\ucrt64\bin then click on New and then insert
 the line into an empty space and click Ok and then close it down. After that restart
