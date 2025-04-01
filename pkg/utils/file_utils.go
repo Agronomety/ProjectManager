@@ -147,3 +147,8 @@ func ScanProjectMetadata(path string) map[string]string {
 
 	return metadata
 }
+
+func FileExists(path string) bool {
+	_, err := os.Stat(path)
+	return !os.IsNotExist(err)
+}

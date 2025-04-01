@@ -30,6 +30,8 @@ type ProjectManagerUI struct {
 	descriptionEdit      *widget.Entry
 	readmeViewer         *widget.Label
 	searchEntry          *widget.Entry
+	readmeUploadBtn      *widget.Button
+	removeReadmeBtn      *widget.Button
 	currentProjects      []models.Project
 	vsCodeLauncher       *vscode.Launcher
 	selectedProjectIndex int
@@ -117,7 +119,8 @@ func (ui *ProjectManagerUI) createUI() {
 	readmeScrollContainer := container.NewScroll(ui.readmeViewer)
 	readmeScrollContainer.SetMinSize(fyne.NewSize(400, 300))
 
-	readmeUploadBtn := widget.NewButton("Upload README", ui.uploadReadmeFile)
+	ui.readmeUploadBtn = widget.NewButton("Upload README", ui.uploadReadmeFile)
+	ui.removeReadmeBtn = widget.NewButton("Remove README", ui.removeReadmeFile)
 
 	openInVSCodeBtn := widget.NewButton("Open in VSCode", func() {
 		if ui.selectedProjectIndex < 0 || ui.selectedProjectIndex >= len(ui.currentProjects) {
@@ -175,9 +178,9 @@ func (ui *ProjectManagerUI) createUI() {
 		Items: []*widget.FormItem{
 			{Text: "Project Name", Widget: widget.NewLabel("")},
 			{Text: "Description", Widget: ui.descriptionEdit},
-			{Text: "README", Widget: readmeUploadBtn},
-			{Text: "Open in VSCode", Widget: openInVSCodeBtn},
-			{Text: "Remove Project", Widget: removeProjectBtn},
+			{Widget: openInVSCodeBtn},
+			{Widget: removeProjectBtn},
+			{Widget: container.NewHBox(ui.readmeUploadBtn, ui.removeReadmeBtn)},
 			{Text: "README Viewer", Widget: readmeScrollContainer},
 		},
 	}
@@ -392,7 +395,6 @@ func extractTagsFromMetadata(metadata map[string]string) []string {
 // updateProjectDetails updates the UI to display the selected project's information
 func (ui *ProjectManagerUI) updateProjectDetails(project models.Project) {
 	ui.projectDetails.Items[0].Widget.(*widget.Label).SetText(project.Name)
-
 	ui.descriptionEdit.SetText(project.Description)
 
 	if project.ReadmePath != "" {
@@ -405,6 +407,9 @@ func (ui *ProjectManagerUI) updateProjectDetails(project models.Project) {
 	} else {
 		ui.readmeViewer.SetText("No README loaded")
 	}
+
+	// Update README button visibility
+	ui.updateReadmeButtonsVisibility()
 }
 
 // uploadReadmeFile allows selecting and attaching a README file to the current project
@@ -436,6 +441,7 @@ func (ui *ProjectManagerUI) uploadReadmeFile() {
 			return
 		}
 
+		ui.currentProjects[selectedIndex] = project
 		ui.updateProjectDetails(project)
 	}, ui.window)
 }
@@ -484,6 +490,45 @@ func (ui *ProjectManagerUI) performSearch(query string) {
 		fmt.Sprintf("Found %d projects matching '%s'", len(projects), query),
 		ui.window,
 	)
+}
+
+// removeReadmeFile removes the README file association from the current project
+func (ui *ProjectManagerUI) removeReadmeFile() {
+	selectedIndex := ui.selectedProjectIndex
+	if selectedIndex < 0 || selectedIndex >= len(ui.currentProjects) {
+		dialog.ShowError(fmt.Errorf("no project selected"), ui.window)
+		return
+	}
+
+	project := ui.currentProjects[selectedIndex]
+
+	project.ReadmePath = ""
+
+	err := ui.projectService.UpdateProject(&project)
+	if err != nil {
+		dialog.ShowError(err, ui.window)
+		return
+	}
+
+	ui.currentProjects[selectedIndex] = project
+	ui.updateProjectDetails(project)
+}
+
+// isReadmeVisible returns true if the current project has a README file
+func (ui *ProjectManagerUI) isReadmeVisible() bool {
+	if ui.selectedProjectIndex < 0 || ui.selectedProjectIndex >= len(ui.currentProjects) {
+		return false
+	}
+
+	project := ui.currentProjects[ui.selectedProjectIndex]
+	return project.ReadmePath != "" && utils.FileExists(project.ReadmePath)
+}
+
+// updateReadmeButtonsVisibility toggles the visibility of README buttons based on README presence
+func (ui *ProjectManagerUI) updateReadmeButtonsVisibility() {
+	hasReadme := ui.isReadmeVisible()
+	ui.readmeUploadBtn.Hidden = hasReadme
+	ui.removeReadmeBtn.Hidden = !hasReadme
 }
 
 // Run displays the window and starts the application event loop
