@@ -35,6 +35,7 @@ type ProjectManagerUI struct {
 	selectedProjectIndex int
 }
 
+// NewProjectManagerUI creates and initializes a new project manager UI
 func NewProjectManagerUI(projectService service.ProjectService) *ProjectManagerUI {
 	a := app.New()
 	w := a.NewWindow("Project Manager")
@@ -51,25 +52,22 @@ func NewProjectManagerUI(projectService service.ProjectService) *ProjectManagerU
 	return ui
 }
 
+// createUI builds the user interface components and layout
 func (ui *ProjectManagerUI) createUI() {
-	// Create a banner with Go-themed styling
+
 	bannerLabel := widget.NewLabel("ProjectManager")
 	bannerLabel.TextStyle = fyne.TextStyle{
 		Bold: true,
 	}
 
-	// Create a blue rectangle for the banner background
-	// Using Go's light blue color (#00ADD8)
 	bannerBg := canvas.NewRectangle(color.NRGBA{R: 0, G: 173, B: 216, A: 255})
 	bannerBg.SetMinSize(fyne.NewSize(200, 40))
 
-	// Overlay the label on the banner background
 	bannerContainer := container.NewStack(
 		bannerBg,
 		container.NewCenter(bannerLabel),
 	)
 
-	// Initialize project list
 	ui.projectList = widget.NewList(
 		func() int { return len(ui.currentProjects) },
 		func() fyne.CanvasObject {
@@ -83,17 +81,14 @@ func (ui *ProjectManagerUI) createUI() {
 		},
 	)
 
-	// Create Project Buttons
 	newProjectBtn := widget.NewButton("New Project", ui.showNewProjectDialog)
 	importProjectBtn := widget.NewButton("Import Projects", ui.showImportProjectsDialog)
 
-	// Wrap buttons in a container
 	buttonContainer := container.NewVBox(
 		newProjectBtn,
 		importProjectBtn,
 	)
 
-	//Search bar
 	ui.searchEntry = widget.NewEntry()
 	ui.searchEntry.SetPlaceHolder("Search projects...")
 	searchIcon := widget.NewButton("🔍", func() {
@@ -101,12 +96,10 @@ func (ui *ProjectManagerUI) createUI() {
 	})
 	searchBar := container.NewBorder(nil, nil, nil, searchIcon, ui.searchEntry)
 
-	// Update entry when Enter is pressed
 	ui.searchEntry.OnSubmitted = func(query string) {
 		ui.performSearch(query)
 	}
 
-	// Project List Container with banner on top
 	projectListContainer := container.NewBorder(
 		container.NewVBox(bannerContainer, buttonContainer, searchBar), // Top - banner and buttons
 		nil,            // Bottom
@@ -115,23 +108,17 @@ func (ui *ProjectManagerUI) createUI() {
 		ui.projectList, // Center
 	)
 
-	// Initialize description edit
 	ui.descriptionEdit = widget.NewMultiLineEntry()
 	ui.descriptionEdit.SetPlaceHolder("Enter project description...")
 
-	// Initialize README viewer
 	ui.readmeViewer = widget.NewLabel("No README loaded")
 	ui.readmeViewer.Wrapping = fyne.TextWrapWord
 
-	// Create a scrollable container for README content
 	readmeScrollContainer := container.NewScroll(ui.readmeViewer)
-	// Set a minimum size for the scroll container so it displays properly
 	readmeScrollContainer.SetMinSize(fyne.NewSize(400, 300))
 
-	// README upload button
 	readmeUploadBtn := widget.NewButton("Upload README", ui.uploadReadmeFile)
 
-	//Open in VSCode button
 	openInVSCodeBtn := widget.NewButton("Open in VSCode", func() {
 		if ui.selectedProjectIndex < 0 || ui.selectedProjectIndex >= len(ui.currentProjects) {
 			dialog.ShowError(fmt.Errorf("no project selected"), ui.window)
@@ -151,7 +138,6 @@ func (ui *ProjectManagerUI) createUI() {
 		}
 	})
 
-	// Remove Project button with confirmation dialog
 	removeProjectBtn := widget.NewButton("Remove Project", func() {
 		if ui.selectedProjectIndex < 0 || ui.selectedProjectIndex >= len(ui.currentProjects) {
 			dialog.ShowError(fmt.Errorf("no project selected"), ui.window)
@@ -160,16 +146,14 @@ func (ui *ProjectManagerUI) createUI() {
 
 		project := ui.currentProjects[ui.selectedProjectIndex]
 
-		// Add confirmation dialog
 		confirmDialog := dialog.NewConfirm(
 			"Confirm Removal",
 			fmt.Sprintf("Are you sure you want to remove project '%s'? This action cannot be undone.", project.Name),
 			func(confirmed bool) {
 				if !confirmed {
-					return // User canceled the operation
+					return
 				}
 
-				// User confirmed, proceed with deletion
 				err := ui.projectService.DeleteProject(project.ID)
 				if err != nil {
 					dialog.ShowError(fmt.Errorf("failed to remove project: %v", err), ui.window)
@@ -184,11 +168,9 @@ func (ui *ProjectManagerUI) createUI() {
 			ui.window,
 		)
 
-		// Show the confirmation dialog
 		confirmDialog.Show()
 	})
 
-	// Project Details Form - Update the README item to use the scroll container
 	ui.projectDetails = &widget.Form{
 		Items: []*widget.FormItem{
 			{Text: "Project Name", Widget: widget.NewLabel("")},
@@ -196,14 +178,12 @@ func (ui *ProjectManagerUI) createUI() {
 			{Text: "README", Widget: readmeUploadBtn},
 			{Text: "Open in VSCode", Widget: openInVSCodeBtn},
 			{Text: "Remove Project", Widget: removeProjectBtn},
-			{Text: "README Viewer", Widget: readmeScrollContainer}, // Use the scroll container here
+			{Text: "README Viewer", Widget: readmeScrollContainer},
 		},
 	}
 
-	// Make the form scrollable too, for projects with lots of metadata or description
 	formScroll := container.NewScroll(ui.projectDetails)
 
-	// Project List Selection Handler
 	ui.projectList.OnSelected = func(id widget.ListItemID) {
 		if id < len(ui.currentProjects) {
 			ui.selectedProjectIndex = id
@@ -212,34 +192,28 @@ func (ui *ProjectManagerUI) createUI() {
 		}
 	}
 
-	// Main Layout
 	split := container.NewHSplit(
 		projectListContainer,
-		formScroll, // Use the scrollable form instead of direct form
+		formScroll,
 	)
-	split.Offset = 0.3 // 30% list, 70% details
+	split.Offset = 0.3
 
-	// Set window content
 	ui.window.SetContent(split)
 
-	// Load projects
 	ui.loadProjects()
 }
 
+// showNewProjectDialog displays a dialog for creating a new project
 func (ui *ProjectManagerUI) showNewProjectDialog() {
-	// Project path selection
 	pathEntry := widget.NewEntry()
 	pathEntry.SetPlaceHolder("Select project directory")
 
-	// Project name entry
 	nameEntry := widget.NewEntry()
 	nameEntry.SetPlaceHolder("Enter project name")
 
-	// Description entry
 	descriptionEntry := widget.NewMultiLineEntry()
 	descriptionEntry.SetPlaceHolder("Enter project description (optional)")
 
-	// Path selection button
 	pathSelectBtn := widget.NewButton("Browse", func() {
 		dialog.ShowFolderOpen(func(uri fyne.ListableURI, err error) {
 			if err != nil {
@@ -258,7 +232,6 @@ func (ui *ProjectManagerUI) showNewProjectDialog() {
 		}, ui.window)
 	})
 
-	// Create content for the dialog
 	content := &widget.Form{
 		Items: []*widget.FormItem{
 			{Text: "Project Path", Widget: container.NewHBox(pathEntry, pathSelectBtn)},
@@ -267,13 +240,11 @@ func (ui *ProjectManagerUI) showNewProjectDialog() {
 		},
 	}
 
-	// Create dialog
 	dialog.ShowCustomConfirm("Create New Project", "Create", "Cancel", content, func(b bool) {
 		if !b {
-			return // Cancel pressed
+			return
 		}
 
-		// Validate inputs
 		projectPath := pathEntry.Text
 		projectName := nameEntry.Text
 
@@ -282,26 +253,22 @@ func (ui *ProjectManagerUI) showNewProjectDialog() {
 			return
 		}
 
-		// Validate project path
 		err := utils.ValidateProjectPath(projectPath)
 		if err != nil {
 			dialog.ShowError(err, ui.window)
 			return
 		}
 
-		// Try to read README
 		readmeContent, _ := utils.ReadReadmeFile(projectPath)
 
-		// Create project object
 		project := &models.Project{
 			Name:        projectName,
 			Path:        projectPath,
 			Description: descriptionEntry.Text,
 			LastOpened:  time.Now(),
-			ReadmePath:  "", // We'll add this if a README is found
+			ReadmePath:  "",
 		}
 
-		// If README found, save it
 		if readmeContent != "" {
 			readmePath := filepath.Join(projectPath, "README.md")
 			err = ioutil.WriteFile(readmePath, []byte(readmeContent), 0644)
@@ -310,29 +277,24 @@ func (ui *ProjectManagerUI) showNewProjectDialog() {
 			}
 		}
 
-		// Attempt to get project metadata
 		metadata := utils.ScanProjectMetadata(projectPath)
 		if len(metadata) > 0 {
-			// You could potentially extract tags or other info from metadata
-			project.Tags = []string{} // Add logic to extract tags if needed
+
+			project.Tags = []string{}
 		}
 
-		// Save project
 		err = ui.projectService.CreateProject(project)
 		if err != nil {
 			dialog.ShowError(err, ui.window)
 			return
 		}
 
-		// Refresh project list
 		ui.loadProjects()
 	}, ui.window)
 }
 
-// / Show import projects dialog
-// This function allows the user to select multiple directories and import projects from them
+// showImportProjectsDialog allows selecting directories to import as projects
 func (ui *ProjectManagerUI) showImportProjectsDialog() {
-	// Allow selecting multiple directories
 	dialog.ShowFolderOpen(func(uri fyne.ListableURI, err error) {
 		if err != nil {
 			dialog.ShowError(err, ui.window)
@@ -344,14 +306,12 @@ func (ui *ProjectManagerUI) showImportProjectsDialog() {
 
 		basePath := uri.Path()
 
-		// Find potential project roots
 		projectPaths, err := utils.FindProjectRoots([]string{basePath})
 		if err != nil {
 			dialog.ShowError(err, ui.window)
 			return
 		}
 
-		// Confirm project import
 		confirmImport := dialog.NewConfirm(
 			"Import Projects",
 			fmt.Sprintf("Found %d potential projects. Import all?", len(projectPaths)),
@@ -360,7 +320,6 @@ func (ui *ProjectManagerUI) showImportProjectsDialog() {
 					return
 				}
 
-				// Import projects
 				var importedProjects []*models.Project
 				var errors []error
 
@@ -371,7 +330,6 @@ func (ui *ProjectManagerUI) showImportProjectsDialog() {
 						LastOpened: time.Now(),
 					}
 
-					// Try to read README
 					readmeContent, _ := utils.ReadReadmeFile(path)
 					if readmeContent != "" {
 						readmePath := filepath.Join(path, "README.md")
@@ -381,14 +339,12 @@ func (ui *ProjectManagerUI) showImportProjectsDialog() {
 						}
 					}
 
-					// Scan metadata
 					metadata := utils.ScanProjectMetadata(path)
 					if len(metadata) > 0 {
-						// You could potentially extract additional info
+
 						project.Tags = extractTagsFromMetadata(metadata)
 					}
 
-					// Create project
 					err := ui.projectService.CreateProject(project)
 					if err != nil {
 						errors = append(errors, fmt.Errorf("failed to import %s: %v", path, err))
@@ -397,16 +353,14 @@ func (ui *ProjectManagerUI) showImportProjectsDialog() {
 					}
 				}
 
-				// Show import results
 				if len(errors) > 0 {
 					errorMsg := "Some projects failed to import:\n"
 					for _, e := range errors {
 						errorMsg += e.Error() + "\n"
 					}
-					dialog.ShowError(fmt.Errorf(errorMsg), ui.window)
+					dialog.ShowError(fmt.Errorf("%s", errorMsg), ui.window)
 				}
 
-				// Refresh project list
 				ui.loadProjects()
 			},
 			ui.window,
@@ -415,11 +369,10 @@ func (ui *ProjectManagerUI) showImportProjectsDialog() {
 	}, ui.window)
 }
 
-// Helper function to extract tags from project metadata
+// extractTagsFromMetadata identifies project types based on metadata files
 func extractTagsFromMetadata(metadata map[string]string) []string {
 	var tags []string
 
-	// Example: Extract language tags
 	if _, exists := metadata["go.mod"]; exists {
 		tags = append(tags, "Go")
 	}
@@ -436,14 +389,12 @@ func extractTagsFromMetadata(metadata map[string]string) []string {
 	return tags
 }
 
+// updateProjectDetails updates the UI to display the selected project's information
 func (ui *ProjectManagerUI) updateProjectDetails(project models.Project) {
-	// Update project name
 	ui.projectDetails.Items[0].Widget.(*widget.Label).SetText(project.Name)
 
-	// Update description
 	ui.descriptionEdit.SetText(project.Description)
 
-	// Load README
 	if project.ReadmePath != "" {
 		content, err := ioutil.ReadFile(project.ReadmePath)
 		if err != nil {
@@ -456,6 +407,7 @@ func (ui *ProjectManagerUI) updateProjectDetails(project models.Project) {
 	}
 }
 
+// uploadReadmeFile allows selecting and attaching a README file to the current project
 func (ui *ProjectManagerUI) uploadReadmeFile() {
 	dialog.ShowFileOpen(func(uc fyne.URIReadCloser, err error) {
 		if err != nil {
@@ -467,10 +419,8 @@ func (ui *ProjectManagerUI) uploadReadmeFile() {
 		}
 		defer uc.Close()
 
-		// Get the selected file's path
 		filePath := uc.URI().Path()
 
-		// Get the currently selected project
 		selectedIndex := ui.selectedProjectIndex
 		if selectedIndex < 0 || selectedIndex >= len(ui.currentProjects) {
 			dialog.ShowError(fmt.Errorf("no project selected"), ui.window)
@@ -480,18 +430,17 @@ func (ui *ProjectManagerUI) uploadReadmeFile() {
 		project := ui.currentProjects[selectedIndex]
 		project.ReadmePath = filePath
 
-		// Update project in service
 		err = ui.projectService.UpdateProject(&project)
 		if err != nil {
 			dialog.ShowError(err, ui.window)
 			return
 		}
 
-		// Refresh project details
 		ui.updateProjectDetails(project)
 	}, ui.window)
 }
 
+// loadProjects retrieves and displays projects from the service
 func (ui *ProjectManagerUI) loadProjects() {
 	projects, err := ui.projectService.ListProjects()
 	if err != nil {
@@ -501,42 +450,35 @@ func (ui *ProjectManagerUI) loadProjects() {
 
 	ui.currentProjects = projects
 
-	// Refresh the project list
 	if ui.projectList != nil {
 		ui.projectList.Refresh()
 	}
 
-	// If there are projects, select the first one
 	if len(projects) > 0 {
 		ui.projectList.Select(0)
 	}
 }
 
+// performSearch filters projects based on query text
 func (ui *ProjectManagerUI) performSearch(query string) {
 	if query == "" {
-		// If search is empty, load all projects
 		ui.loadProjects()
 		return
 	}
 
-	// Search projects using the service
 	projects, err := ui.projectService.SearchProjects(query)
 	if err != nil {
 		dialog.ShowError(fmt.Errorf("search failed: %v", err), ui.window)
 		return
 	}
 
-	// Update the current projects list with search results
 	ui.currentProjects = projects
 
-	// Refresh the list
 	ui.projectList.Refresh()
 
-	// Clear selection and details
 	ui.selectedProjectIndex = -1
 	ui.updateProjectDetails(models.Project{})
 
-	// Show result count
 	dialog.ShowInformation(
 		"Search Results",
 		fmt.Sprintf("Found %d projects matching '%s'", len(projects), query),
@@ -544,6 +486,7 @@ func (ui *ProjectManagerUI) performSearch(query string) {
 	)
 }
 
+// Run displays the window and starts the application event loop
 func (ui *ProjectManagerUI) Run() {
 	ui.window.ShowAndRun()
 }

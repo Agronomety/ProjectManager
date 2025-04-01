@@ -23,31 +23,29 @@ func NewLauncher(projectService service.ProjectService) *Launcher {
 	}
 }
 
+// OpenProject launches the given project in VS Code.
 func (l *Launcher) OpenProject(project *models.Project) error {
-	// Verify project path exists
+
 	if _, err := os.Stat(project.Path); os.IsNotExist(err) {
 		return fmt.Errorf("project path does not exist: %s", project.Path)
 	}
 
-	// Prepare VS Code launch command based on operating system
 	var cmd *exec.Cmd
 	switch runtime.GOOS {
 	case "windows":
 		cmd = exec.Command("cmd", "/c", "code", project.Path)
-	case "darwin": // macOS
+	case "darwin":
 		cmd = exec.Command("open", "-a", "Visual Studio Code", project.Path)
-	default: // Linux and other Unix-like systems
+	default:
 		cmd = exec.Command("code", project.Path)
 	}
 
-	// Update last opened time
 	project.LastOpened = time.Now()
 	err := l.projectService.UpdateProject(project)
 	if err != nil {
 		log.Printf("Failed to update last opened time: %v", err)
 	}
 
-	// Launch VS Code
 	err = cmd.Start()
 	if err != nil {
 		return fmt.Errorf("failed to launch VS Code: %v", err)
@@ -56,13 +54,13 @@ func (l *Launcher) OpenProject(project *models.Project) error {
 	return nil
 }
 
-// Optional: Utility method to detect VS Code installation
+// IsVSCodeInstalled checks if VS Code is installed on the system.
 func (l *Launcher) IsVSCodeInstalled() bool {
 	_, err := exec.LookPath("code")
 	return err == nil
 }
 
-// Optional: Find VS Code installation path
+// FindVSCodePath attempts to locate the VS Code executable on the system.
 func (l *Launcher) FindVSCodePath() (string, error) {
 	var paths []string
 
@@ -78,7 +76,7 @@ func (l *Launcher) FindVSCodePath() (string, error) {
 			"/Applications/Visual Studio Code.app/Contents/MacOS/Electron",
 			"/Applications/VSCode.app/Contents/MacOS/Electron",
 		}
-	default: // Linux
+	default:
 		paths = []string{
 			"/usr/bin/code",
 			"/usr/local/bin/code",

@@ -3,7 +3,6 @@ package utils
 import (
 	"errors"
 	"fmt"
-	"io/ioutil"
 	"log"
 	"os"
 	"path/filepath"
@@ -68,7 +67,7 @@ func ReadReadmeFile(projectPath string) (string, error) {
 
 	for _, name := range readmeNames {
 		readmePath := filepath.Join(projectPath, name)
-		content, err := ioutil.ReadFile(readmePath)
+		content, err := os.ReadFile(readmePath)
 		if err == nil {
 			return string(content), nil
 		}
@@ -79,20 +78,18 @@ func ReadReadmeFile(projectPath string) (string, error) {
 
 // ValidateProjectPath checks if a path is a valid project directory
 func ValidateProjectPath(path string) error {
-	// Check if path exists
+
 	info, err := os.Stat(path)
 	if os.IsNotExist(err) {
 		return fmt.Errorf("path does not exist: %s", path)
 	}
 
-	// Must be a directory
 	if !info.IsDir() {
 		return fmt.Errorf("path is not a directory: %s", path)
 	}
 
-	// Less strict validation
 	// Allow the path if it has at least one file or subdirectory
-	entries, err := ioutil.ReadDir(path)
+	entries, err := os.ReadDir(path)
 	if err != nil {
 		return fmt.Errorf("cannot read directory contents: %s", path)
 	}
@@ -101,7 +98,6 @@ func ValidateProjectPath(path string) error {
 		return fmt.Errorf("directory is empty: %s", path)
 	}
 
-	// Optional: Soft check for project indicators
 	softIndicators := []string{
 		".git",
 		"go.mod",
@@ -118,17 +114,15 @@ func ValidateProjectPath(path string) error {
 		}
 	}
 
-	// Warning: Directory seems empty or not a typical project
 	log.Printf("Warning: Directory %s might not be a typical project", path)
 	return nil
 }
 
 // GetProjectName attempts to extract a meaningful project name from the path
 func GetProjectName(path string) string {
-	// Remove trailing slashes
+
 	path = strings.TrimRight(path, "/\\")
 
-	// Get the base directory name
 	return filepath.Base(path)
 }
 
@@ -136,7 +130,6 @@ func GetProjectName(path string) string {
 func ScanProjectMetadata(path string) map[string]string {
 	metadata := make(map[string]string)
 
-	// Attempt to read project files for additional info
 	files := []string{
 		"go.mod",
 		"package.json",
@@ -146,7 +139,7 @@ func ScanProjectMetadata(path string) map[string]string {
 
 	for _, filename := range files {
 		filePath := filepath.Join(path, filename)
-		content, err := ioutil.ReadFile(filePath)
+		content, err := os.ReadFile(filePath)
 		if err == nil {
 			metadata[filename] = string(content)
 		}

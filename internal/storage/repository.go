@@ -123,29 +123,24 @@ func (r *SQLiteProjectRepository) GetByID(id int64) (*models.Project, error) {
 }
 
 func (r *SQLiteProjectRepository) ListAll() ([]models.Project, error) {
-	// Write an SQL SELECT query to get all projects
 	query := `
         SELECT id, name, path, description, readme_path, 
                last_opened, tags, icon 
         FROM projects
     `
 
-	// Execute the query
 	rows, err := r.db.Query(query)
 	if err != nil {
 		return nil, fmt.Errorf("failed to query projects: %v", err)
 	}
 	defer rows.Close()
 
-	// Slice to hold all projects
 	var projects []models.Project
 
-	// Iterate through results
 	for rows.Next() {
 		var project models.Project
 		var tagsStr string
 
-		// Scan each row into a project
 		err := rows.Scan(
 			&project.ID,
 			&project.Name,
@@ -160,7 +155,6 @@ func (r *SQLiteProjectRepository) ListAll() ([]models.Project, error) {
 			return nil, fmt.Errorf("failed to scan project: %v", err)
 		}
 
-		// Convert tags string back to slice
 		if tagsStr != "" {
 			project.Tags = strings.Split(tagsStr, ",")
 		}
@@ -168,7 +162,6 @@ func (r *SQLiteProjectRepository) ListAll() ([]models.Project, error) {
 		projects = append(projects, project)
 	}
 
-	// Check for any errors encountered during iteration
 	if err = rows.Err(); err != nil {
 		return nil, fmt.Errorf("error reading projects: %v", err)
 	}

@@ -3,7 +3,6 @@ package config
 import (
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
 	"log"
 	"os"
 	"path/filepath"
@@ -39,21 +38,18 @@ func Load() (*Config, error) {
 	configPath := configdir.LocalConfig(appName)
 	configFile := filepath.Join(configPath, "config.json")
 
-	// Ensure config directory exists
 	err := os.MkdirAll(configPath, 0755)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create config directory: %v", err)
 	}
 
-	// Check if config file exists
 	if _, err := os.Stat(configFile); os.IsNotExist(err) {
-		// Create default config file
 		defaultConfig := DefaultConfig()
 		return defaultConfig, defaultConfig.Save()
 	}
 
 	// Read existing config
-	configData, err := ioutil.ReadFile(configFile)
+	configData, err := os.ReadFile(configFile)
 	if err != nil {
 		return nil, fmt.Errorf("failed to read config file: %v", err)
 	}
@@ -78,7 +74,7 @@ func (c *Config) Save() error {
 		return fmt.Errorf("failed to marshal config: %v", err)
 	}
 
-	err = ioutil.WriteFile(configFile, configData, 0644)
+	err = os.WriteFile(configFile, configData, 0644)
 	if err != nil {
 		return fmt.Errorf("failed to write config file: %v", err)
 	}

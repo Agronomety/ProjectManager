@@ -17,19 +17,17 @@ type SQLiteStorage struct {
 }
 
 func NewSQLiteStorage(dbPath string) (*SQLiteStorage, error) {
-	// Ensure the directory exists
+
 	err := os.MkdirAll(filepath.Dir(dbPath), 0755)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create database directory: %v", err)
 	}
 
-	// Open the database
 	db, err := sql.Open("sqlite3", dbPath)
 	if err != nil {
 		return nil, fmt.Errorf("failed to open database: %v", err)
 	}
 
-	// Create tables if they don't exist
 	err = createTables(db)
 	if err != nil {
 		db.Close()
@@ -40,7 +38,7 @@ func NewSQLiteStorage(dbPath string) (*SQLiteStorage, error) {
 }
 
 func createTables(db *sql.DB) error {
-	// Projects table
+
 	_, err := db.Exec(`
 		CREATE TABLE IF NOT EXISTS projects (
 			id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -64,7 +62,6 @@ func (s *SQLiteStorage) Close() error {
 	return s.db.Close()
 }
 
-// ProjectRepository implementation
 func (s *SQLiteStorage) Create(project *models.Project) error {
 	query := `
 		INSERT INTO projects 
@@ -72,7 +69,6 @@ func (s *SQLiteStorage) Create(project *models.Project) error {
 		VALUES (?, ?, ?, ?, ?, ?, ?)
 	`
 
-	// Convert tags to a string (you might want a more sophisticated serialization)
 	tagsStr := ""
 	if len(project.Tags) > 0 {
 		tagsStr = strings.Join(project.Tags, ",")
@@ -92,7 +88,6 @@ func (s *SQLiteStorage) Create(project *models.Project) error {
 		return fmt.Errorf("failed to insert project: %v", err)
 	}
 
-	// Set the ID of the newly inserted project
 	id, err := result.LastInsertId()
 	if err != nil {
 		return fmt.Errorf("failed to get last insert ID: %v", err)
@@ -109,7 +104,6 @@ func (s *SQLiteStorage) Update(project *models.Project) error {
 		WHERE id = ?
 	`
 
-	// Convert tags to a string
 	tagsStr := ""
 	if len(project.Tags) > 0 {
 		tagsStr = strings.Join(project.Tags, ",")
@@ -161,7 +155,6 @@ func (s *SQLiteStorage) GetByID(id int64) (*models.Project, error) {
 		return nil, fmt.Errorf("failed to get project: %v", err)
 	}
 
-	// Convert tags string back to slice
 	if tagsStr != "" {
 		project.Tags = strings.Split(tagsStr, ",")
 	}
@@ -200,7 +193,6 @@ func (s *SQLiteStorage) ListAll() ([]models.Project, error) {
 			return nil, fmt.Errorf("failed to scan project: %v", err)
 		}
 
-		// Convert tags string back to slice
 		if tagsStr != "" {
 			project.Tags = strings.Split(tagsStr, ",")
 		}
