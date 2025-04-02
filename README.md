@@ -37,7 +37,12 @@ Built with Go, ProjectManager provides an intuitive interface for managing proje
 
 
 
-![screenshot](https://github.com/user-attachments/assets/b938d7e2-cb67-4d0a-8dd1-231bee3a820e)
+## Screenshot of GUI
+
+![screenshot](https://github.com/user-attachments/assets/9e9a28f5-19c1-4ced-acbf-9832489ccd0d)
+
+
+
 
 
 
