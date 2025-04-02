@@ -35,6 +35,12 @@ Built with Go, ProjectManager provides an intuitive interface for managing proje
 * Configurable storage locations
 * Easy project searching and filtering
 
+
+
+![screenshot](https://github.com/user-attachments/assets/b938d7e2-cb67-4d0a-8dd1-231bee3a820e)
+
+
+
 # Technologies
 
 * Language: Go
